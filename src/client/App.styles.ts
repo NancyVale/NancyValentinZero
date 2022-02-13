@@ -1,6 +1,6 @@
 import styled from 'styled-components';
 import IconButton from '@material-ui/core/IconButton';
-import { AppBar, Typography, withStyles } from '@material-ui/core';
+import { AppBar, Typography, withStyles} from '@material-ui/core';
 
 export const Wrapper = styled.div`
   margin: 40px;

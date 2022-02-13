@@ -3,6 +3,7 @@ import { useQuery } from 'react-query';
 // Components
 import Item from './Cart/Item/Item';
 import Cart from './Cart/Cart';
+import Dialogs from './Cart/Dialogs';
 import Drawer from '@material-ui/core/Drawer';
 import LinearProgress from '@material-ui/core/LinearProgress';
 import Grid from '@material-ui/core/Grid';
@@ -12,6 +13,7 @@ import Badge from '@material-ui/core/Badge';
 // Styles
 import { Wrapper, StyledButton, StyledAppBar, HeaderTypography } from './App.styles';
 import { AppBar, Toolbar, Typography } from '@material-ui/core';
+
 // Types
 export type CartItemType = {
   id: number;
@@ -23,13 +25,15 @@ export type CartItemType = {
   amount: number;
 };
 
-
 const getCheeses = async (): Promise<CartItemType[]> =>
   await (await fetch(`api/cheeses`)).json();
 
 const App = () => {
   const [cartOpen, setCartOpen] = useState(false);
+  const [purchaseOpen, setPurchaseOpen]= useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
   const [cartItems, setCartItems] = useState([] as CartItemType[]);
+  const [dialogItems, setDialogItems] = useState([] as CartItemType[]);
   const { data, isLoading, error } = useQuery<CartItemType[]>(
     'cheeses',
     getCheeses
@@ -56,6 +60,19 @@ const App = () => {
     });
   };
 
+  const handleAddToDialog = (clickedItem: CartItemType) => {
+    setDialogOpen(true);
+    setDialogItems(prev => {
+     
+      // showed Item clicked 
+      return [{ ...clickedItem}];
+    });
+  };
+
+  const handleClose = () => {
+     setDialogOpen(false);
+  };
+
   const handleRemoveFromCart = (id: number) => {
     setCartItems(prev =>
       prev.reduce((ack, item) => {
@@ -71,7 +88,8 @@ const App = () => {
 
   if (isLoading) return <LinearProgress />;
   if (error) return <div>Something went wrong ...</div>;
-
+  const value = localStorage.getItem('Test');
+ 
   return (
 
     <Wrapper>
@@ -83,7 +101,7 @@ const App = () => {
             justify="space-between"
             alignItems="center"
           >
-            <StyledButton>
+            <StyledButton  data-cy="restore-count" onClick={()=>setPurchaseOpen(true)}>
               <RestoreIcon />
               <Typography variant="subtitle2">
                 Recent Purchases
@@ -111,7 +129,19 @@ const App = () => {
         </Toolbar>
       </StyledAppBar>
 
-      <Drawer anchor='right' open={cartOpen} onClose={() => setCartOpen(false)}>
+      <Drawer anchor='left' open={purchaseOpen} onClose={() => setPurchaseOpen(false)} data-cy="drawer-purchase">
+         <h2>Recent Purchases</h2>
+            {
+              JSON.parse(value!)?.map((itemPurchase:any)=>(
+                <div>
+                  <h3>{itemPurchase.title}</h3>
+                  <h1>${itemPurchase.price}</h1>
+                </div>
+                ))
+            }
+      </Drawer>
+
+      <Drawer anchor='right' open={cartOpen} onClose={() => setCartOpen(false)} data-cy="drawer-cart">
         <Cart
           cartItems={cartItems}
           addToCart={handleAddToCart}
@@ -119,13 +149,14 @@ const App = () => {
         />
       </Drawer>
 
-      <Grid container spacing={3}>
+      <Grid container  spacing={3}>
         {data?.map(item => (
           <Grid item key={item.id} xs={12} sm={4}>
-            <Item item={item} handleAddToCart={handleAddToCart} />
+            <Item item={item} handleAddToCart={handleAddToCart} handleAddToDialog={handleAddToDialog}/>
           </Grid>
         ))}
       </Grid>
+      <Dialogs dialogItems={dialogItems} dialogOpen={dialogOpen} handleClose={handleClose}/>
     </Wrapper>
 
   );
